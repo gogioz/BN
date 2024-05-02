@@ -43,12 +43,17 @@ router.post("/articles", uploadImages, async (req, res) => {
       image: imageName,
     };
 
-    // create the new article
-    const article = await Article.create(newArticle);
+    const db = client.db("your_database");
+    const collection = db.collection("your_collection");
 
-    // if success send the article
-    return res.status(201).send(article);
-    // if not handle the error
+    // Insert the new object
+    collection.insertOne(newArticle, (err, res) => {
+      if (err) {
+        console.error("Error creating new object:", err);
+        return res.status(500).send("Error creating new object");
+      }
+      res.send("New object created successfully");
+    });
   } catch (err) {
     console.log(err.message);
     console.log(req.body);
@@ -110,16 +115,21 @@ router.put("/articles/:id", uploadImages, async (req, res) => {
       descriptionTrans: descriptionTrans,
       image: imageName,
     };
+    const db = client.db("test");
+    const collection = db.collection("articles");
 
     const { id } = req.params;
+    // Update the document
+    const query = { _id: new ObjectId(id) };
 
-    const result = await Article.findByIdAndUpdate(id, update);
+    collection.updateOne(query, update, (err, res) => {
+      if (err) {
+        console.error("Error updating Article:", err);
 
-    if (!result) {
-      return res.status(404).send({ message: "Article not found" });
-    }
-
-    return res.status(200).send({ message: "Article updated successfully" });
+        return res.status(404).send({ message: "Article not found" });
+      }
+      return res.status(200).send({ message: "Article updated successfully" });
+    });
   } catch (err) {
     console.log(err.message);
     res.status(500).send({ message: err.message });
