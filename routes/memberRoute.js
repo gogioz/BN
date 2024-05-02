@@ -1,10 +1,6 @@
 import express from "express";
 import { Member } from "../models/memberModel.js";
 import multer from "multer";
-import { mongoDBURL } from "../config.js";
-import { MongoClient } from "mongodb";
-
-const client = new MongoClient(mongoDBURL);
 
 const router = express.Router();
 
@@ -84,18 +80,15 @@ router.get("/team", async (req, res) => {
 // get one teamMember in database by id
 router.get("/team/:id", async (req, res) => {
   try {
-    // Get the database and collection on which to run the operation
-    const database = client.db("test");
-    const members = database.collection("members");
     const { id } = req.params;
-    const member = await members.findOne({ _id: id });
-
+    const member = await Member.findById(id);
     return res.status(200).json(member);
   } catch (err) {
     console.log(err.message);
     res.status(500).send({ message: err.message });
   }
 });
+
 // update an teamMember in the database
 router.put("/team/:id", uploadImages, async (req, res) => {
   try {

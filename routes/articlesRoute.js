@@ -22,8 +22,51 @@ const upload = multer({ storage: storage });
 const uploadImages = upload.single("image");
 
 // post new Article
+// router.post("/articles", uploadImages, async (req, res) => {
+//   try {
+//     const {
+//       title,
+//       titleTrans,
+//       subTitle,
+//       subTitleTrans,
+//       description,
+//       descriptionTrans,
+//     } = req.body;
+//     const imageName = `/src/assets/${req.file.filename}`;
+//     const newArticle = {
+//       title: title,
+//       titleTrans: titleTrans,
+//       subTitle: subTitle,
+//       subTitleTrans: subTitleTrans,
+//       description: description,
+//       descriptionTrans: descriptionTrans,
+//       image: imageName,
+//     };
+
+//     const db = client.db("your_database");
+//     const collection = db.collection("your_collection");
+
+//     // Insert the new object
+//     collection.createIndex(newArticle, (err, res) => {
+//       if (err) {
+//         console.error("Error creating new object:", err);
+//         return res.status(500).send("Error creating new object");
+//       }
+//       res.send("New object created successfully");
+//     });
+//   } catch (err) {
+//     console.log(err.message);
+//     console.log(req.body);
+//     res.status(500).send({ message: err.message });
+//   }
+// });
+
 router.post("/articles", uploadImages, async (req, res) => {
   try {
+    await client.connect();
+    // Get the database and collection on which to run the operation
+    const db = client.db("test");
+    const col = db.collection("articles");
     const {
       title,
       titleTrans,
@@ -43,20 +86,11 @@ router.post("/articles", uploadImages, async (req, res) => {
       image: imageName,
     };
 
-    const db = client.db("your_database");
-    const collection = db.collection("your_collection");
+    const p = await col.insertOne(newArticle);
 
-    // Insert the new object
-    collection.insertOne(newArticle, (err, res) => {
-      if (err) {
-        console.error("Error creating new object:", err);
-        return res.status(500).send("Error creating new object");
-      }
-      res.send("New object created successfully");
-    });
+    return res.send(p);
   } catch (err) {
-    console.log(err.message);
-    console.log(req.body);
+    console.error(err.message);
     res.status(500).send({ message: err.message });
   }
 });
@@ -97,6 +131,8 @@ router.get("/articles/:id", async (req, res) => {
 // update an article in the database
 router.put("/articles/:id", uploadImages, async (req, res) => {
   try {
+    const database = client.db("test");
+    const article = database.collection("articles");
     const {
       title,
       titleTrans,
@@ -107,29 +143,28 @@ router.put("/articles/:id", uploadImages, async (req, res) => {
     } = req.body;
     const imageName = `/src/assets/${req.file.filename}`;
     const update = {
-      title: title,
-      titleTrans: titleTrans,
-      subTitle: subTitle,
-      subTitleTrans: subTitleTrans,
-      description: description,
-      descriptionTrans: descriptionTrans,
-      image: imageName,
+      $set: {
+        title: title,
+        titleTrans: titleTrans,
+        subTitle: subTitle,
+        subTitleTrans: subTitleTrans,
+        description: description,
+        descriptionTrans: descriptionTrans,
+        image: imageName,
+      },
+      $inc: {
+        views: 1,
+      },
     };
-    const db = client.db("test");
-    const collection = db.collection("articles");
 
     const { id } = req.params;
+
+    const filter = { _id: new ObjectId(id) };
+
     // Update the document
-    const query = { _id: new ObjectId(id) };
 
-    collection.updateOne(query, update, (err, res) => {
-      if (err) {
-        console.error("Error updating Article:", err);
-
-        return res.status(404).send({ message: "Article not found" });
-      }
-      return res.status(200).send({ message: "Article updated successfully" });
-    });
+    const result = await article.updateOne(filter, update);
+    return res.send(result);
   } catch (err) {
     console.log(err.message);
     res.status(500).send({ message: err.message });
