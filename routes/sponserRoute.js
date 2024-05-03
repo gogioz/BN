@@ -7,7 +7,7 @@ const router = express.Router();
 // Set up Multer
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, "../Front-End/src/assets");
+    cb(null, "../FR/public/");
   },
   filename: function (req, file, cb) {
     cb(null, file.originalname);
@@ -21,7 +21,7 @@ const uploadLogo = upload.single("logo");
 // post new sponser
 router.post("/sponsers", uploadLogo, async (req, res) => {
   try {
-    const imageName = `/src/assets/${req.file.filename}`;
+    const imageName = `${req.file.filename}`;
     const newSponser = {
       logo: imageName,
     };
